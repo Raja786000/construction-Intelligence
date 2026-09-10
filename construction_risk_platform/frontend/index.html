@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Construction Risk Intelligence Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="top-header">
+            <div class="brand-section">
+                <div class="brand-icon">🏗️</div>
+                <div>
+                    <h1 class="brand-title">Construction Intelligence Hub</h1>
+                    <p class="brand-subtitle">Agentic AI Safety Monitoring & Risk Analytics Engine</p>
+                </div>
+            </div>
+            
+            <div class="header-ticker">
+                <span class="ticker-badge live-pulse">LIVE MONITORING</span>
+                <span id="ticker-message">Analyzing site feeds, IoT sensors & meteorological forecasts...</span>
+            </div>
+
+            <div class="header-actions">
+                <div class="project-score-badge" id="header-score-badge">
+                    <span class="score-label">Risk Level</span>
+                    <span class="score-value" id="header-risk-score">42.8 | HIGH</span>
+                </div>
+                <button class="btn btn-primary" id="btn-open-assistant">🤖 AI Risk Copilot</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-tab="tab-overview">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Executive Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="tab-cv-studio">
+                        <span class="nav-icon">🦺</span>
+                        <span class="nav-text">CV Safety & PPE Studio</span>
+                    </button>
+                    <button class="nav-item" data-tab="tab-agents-hub">
+                        <span class="nav-icon">🤖</span>
+                        <span class="nav-text">Agent Collaboration Hub</span>
+                    </button>
+                    <button class="nav-item" data-tab="tab-analytics">
+                        <span class="nav-icon">📈</span>
+                        <span class="nav-text">Predictive Analytics</span>
+                    </button>
+                    <button class="nav-item" data-tab="tab-entities">
+                        <span class="nav-icon">🗃️</span>
+                        <span class="nav-text">Project Entities Explorer</span>
+                    </button>
+                    <button class="nav-item" data-tab="tab-reports">
+                        <span class="nav-icon">📑</span>
+                        <span class="nav-text">Risk Audit Reports</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-agent-widget">
+                    <h3>Active AI Ensemble</h3>
+                    <div class="mini-agent-list" id="mini-agent-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Panels -->
+            <main class="content-area">
+                <!-- TAB 1: EXECUTIVE DASHBOARD -->
+                <section id="tab-overview" class="tab-panel active">
+                    <div class="metrics-grid">
+                        <div class="metric-card glassmorphism">
+                            <div class="metric-header">
+                                <span>Composite Risk Score</span>
+                                <span class="metric-icon">⚖️</span>
+                            </div>
+                            <div class="metric-main">
+                                <span class="metric-value text-warning" id="dash-risk-score">42.8</span>
+                                <span class="metric-unit">/ 100</span>
+                            </div>
+                            <p class="metric-sub" id="dash-risk-level">Status: HIGH RISK (2 Critical Factors)</p>
+                        </div>
+
+                        <div class="metric-card glassmorphism">
+                            <div class="metric-header">
+                                <span>PPE Compliance Rate</span>
+                                <span class="metric-icon">🦺</span>
+                            </div>
+                            <div class="metric-main">
+                                <span class="metric-value text-success" id="dash-ppe-pct">87.5%</span>
+                            </div>
+                            <p class="metric-sub" id="dash-worker-count">Active Workers Logged: 64</p>
+                        </div>
+
+                        <div class="metric-card glassmorphism">
+                            <div class="metric-header">
+                                <span>Weather Risk Warning</span>
+                                <span class="metric-icon">🌧️</span>
+                            </div>
+                            <div class="metric-main">
+                                <span class="metric-value text-danger" id="dash-weather-rain">38.0 mm</span>
+                            </div>
+                            <p class="metric-sub" id="dash-weather-condition">Heavy Thunderstorm Forecast</p>
+                        </div>
+
+                        <div class="metric-card glassmorphism">
+                            <div class="metric-header">
+                                <span>Machinery Telemetry</span>
+                                <span class="metric-icon">🏗️</span>
+                            </div>
+                            <div class="metric-main">
+                                <span class="metric-value text-warning" id="dash-crane-vib">8.4 mm/s</span>
+                            </div>
+                            <p class="metric-sub" id="dash-equip-flag">Tower Crane #2 Failure Risk: 38%</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid-2col">
+                        <div class="card glassmorphism">
+                            <div class="card-header">
+                                <h2>Multi-Domain Risk Radar</h2>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-risk-radar"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card glassmorphism">
+                            <div class="card-header">
+                                <h2>Real-Time AI Alert Feed</h2>
+                            </div>
+                            <div class="alert-feed-list" id="dash-alert-feed">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: CV SAFETY & PPE STUDIO -->
+                <section id="tab-cv-studio" class="tab-panel">
+                    <div class="card glassmorphism">
+                        <div class="card-header">
+                            <h2>AI Safety Monitoring & Computer Vision PPE Detection</h2>
+                            <p>Upload site photos or select preset construction feeds to analyze hardhats, vests, masks, harnesses, and hazard events.</p>
+                        </div>
+                        <div class="cv-studio-layout">
+                            <div class="cv-upload-pane">
+                                <div class="drop-zone" id="cv-drop-zone">
+                                    <div class="drop-icon">📷</div>
+                                    <p>Drag & Drop Site Image or <strong>Click to Browse</strong></p>
+                                    <input type="file" id="cv-file-input" accept="image/*" style="display:none">
+                                </div>
+                                <div class="preset-controls">
+                                    <span>Sample Site Feeds:</span>
+                                    <button class="btn btn-outline btn-sm" id="btn-preset-1">Feed 1: Shear Wall</button>
+                                    <button class="btn btn-outline btn-sm" id="btn-preset-2">Feed 2: Tower Crane</button>
+                                </div>
+                            </div>
+
+                            <div class="cv-preview-pane">
+                                <div class="canvas-wrapper">
+                                    <img id="cv-result-img" src="" alt="Analyzed Site Feed" style="display:none; max-width:100%; border-radius:10px;">
+                                    <div class="canvas-placeholder" id="cv-placeholder">
+                                        <div class="spinner-icon">🦺</div>
+                                        <p>Select or upload an image to run Computer Vision PPE Inspection</p>
+                                    </div>
+                                </div>
+                                <div class="cv-results-card" id="cv-results-card" style="display:none">
+                                    <h3>Safety Detection Summary</h3>
+                                    <div class="cv-badge-row">
+                                        <span class="badge" id="cv-res-score">Safety Score: --</span>
+                                        <span class="badge" id="cv-res-workers">Workers: --</span>
+                                    </div>
+                                    <div id="cv-violations-list" class="violations-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: AGENT COLLABORATION HUB -->
+                <section id="tab-agents-hub" class="tab-panel">
+                    <div class="card glassmorphism">
+                        <div class="card-header">
+                            <h2>Autonomous Multi-Agent Collaboration Matrix</h2>
+                            <p>Watch Safety, Weather, Cost, Schedule, Resource, and Quality agents communicate and synthesize cross-domain risk mitigations.</p>
+                        </div>
+                        <div class="agents-grid" id="agents-full-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="card glassmorphism mt-20">
+                            <h3>Inter-Agent Message Pipeline & Joint Action Plan</h3>
+                            <div id="agent-collaboration-stream" class="collaboration-stream"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 4: PREDICTIVE ANALYTICS -->
+                <section id="tab-analytics" class="tab-panel">
+                    <div class="metrics-grid">
+                        <div class="card glassmorphism">
+                            <h3>Schedule Delay Forecaster</h3>
+                            <div class="form-group">
+                                <label>Forecast Rainfall (mm):</label>
+                                <input type="number" id="ml-rain-input" value="38" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Active Site Workers:</label>
+                                <input type="number" id="ml-workers-input" value="64" class="form-control">
+                            </div>
+                            <button class="btn btn-primary" id="btn-predict-schedule">Run ML Delay Model</button>
+                            <div class="prediction-output mt-10" id="schedule-ml-output"></div>
+                        </div>
+
+                        <div class="card glassmorphism">
+                            <h3>Cost Overrun Risk Estimator</h3>
+                            <div class="form-group">
+                                <label>Schedule Delay Days:</label>
+                                <input type="number" id="ml-delay-input" value="3.5" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Material Shortage Risk:</label>
+                                <select id="ml-shortage-select" class="form-control">
+                                    <option value="HIGH" selected>HIGH</option>
+                                    <option value="MEDIUM">MEDIUM</option>
+                                    <option value="LOW">LOW</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="btn-predict-cost">Run ML Cost Model</button>
+                            <div class="prediction-output mt-10" id="cost-ml-output"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card glassmorphism mt-20">
+                        <h3>Machinery & Equipment Health Telemetry</h3>
+                        <div class="chart-container">
+                            <canvas id="chart-equipment-health"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 5: ENTITIES EXPLORER -->
+                <section id="tab-entities" class="tab-panel">
+                    <div class="card glassmorphism">
+                        <div class="card-header flex-between">
+                            <h2>Project Domain Entities Registry (15 Entities)</h2>
+                            <select id="entity-selector" class="form-control" style="width: 260px;">
+                                <option value="projects">Project</option>
+                                <option value="sites">Construction Site</option>
+                                <option value="risks" selected>Risks</option>
+                                <option value="ai_agents">AI Agents</option>
+                                <option value="workers">Workers</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="materials">Materials</option>
+                                <option value="tasks">Tasks</option>
+                                <option value="incidents">Safety Incidents</option>
+                                <option value="weather">Weather Data</option>
+                                <option value="costs">Cost Records</option>
+                                <option value="schedules">Schedules</option>
+                                <option value="sensors">Sensor Data</option>
+                                <option value="alerts">Alerts</option>
+                                <option value="reports">Reports</option>
+                            </select>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="entities-table">
+                                <thead>
+                                    <tr id="entities-table-head"></tr>
+                                </thead>
+                                <tbody id="entities-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 6: AUDIT REPORTS -->
+                <section id="tab-reports" class="tab-panel">
+                    <div class="card glassmorphism">
+                        <div class="card-header flex-between">
+                            <h2>Executive AI Risk Audit & Report Exporter</h2>
+                            <button class="btn btn-primary" id="btn-generate-report">⚡ Generate New Audit Report</button>
+                        </div>
+                        <div id="report-view-container" class="report-container">
+                            <p>Loading executive report...</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- AI Assistant Floating Copilot Drawer -->
+        <div class="copilot-drawer" id="copilot-drawer">
+            <div class="copilot-header">
+                <div class="copilot-title">
+                    <span>🤖</span>
+                    <span>AI Risk Assistant Copilot</span>
+                </div>
+                <button class="btn-close" id="btn-close-assistant">&times;</button>
+            </div>
+            <div class="copilot-messages" id="copilot-messages">
+                <div class="chat-bubble bot-bubble">
+                    Hello! I am your Autonomous Construction Risk Assistant. I am monitoring all 6 AI agents, safety feeds, and IoT sensors. Ask me anything about project delays, weather alerts, or crane health!
+                </div>
+            </div>
+            <div class="copilot-input-area">
+                <input type="text" id="copilot-input" placeholder="Ask AI Risk Assistant..." class="form-control">
+                <button class="btn btn-primary" id="btn-send-chat">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

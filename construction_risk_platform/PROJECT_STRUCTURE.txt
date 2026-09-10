@@ -1,0 +1,2 @@
+Put risk_model and risk_agent beside each other in your project root.
+For actual construction PPE detection, use a custom-trained YOLO .pt model. The bundled general yolo11n.pt can demonstrate person/object detection but should not be treated as a reliable helmet/vest detector.
