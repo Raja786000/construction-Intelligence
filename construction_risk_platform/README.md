@@ -110,16 +110,6 @@ This command initializes the SQLite database, populates seed data for all 15 ent
 
 ---
 
-## 📦 Generating Project ZIP Deliverable
-
-To build a clean zip package containing the entire codebase ready for distribution or submission:
-```bash
-python scripts/build_zip.py
-```
-This produces `construction_risk_platform.zip` in the root workspace folder.
-
----
-
 ## 🛠️ API Reference Endpoints
 
 - `GET /api/dashboard/stats`: Returns live executive metrics, PPE compliance rate, and weather alerts.
