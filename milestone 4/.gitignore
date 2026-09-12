@@ -1,0 +1,7 @@
+backend/.venv/
+__pycache__/
+*.py[cod]
+backend/data/*.db
+backend/generated_reports/*
+!backend/generated_reports/.gitkeep
+frontend/node_modules/
