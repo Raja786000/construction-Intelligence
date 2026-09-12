@@ -1,0 +1,14 @@
+services:
+  quality-backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    volumes:
+      - ./uploads:/app/uploads
+      - ./models:/models
+    environment:
+      QUALITY_MODEL_DIR: /models
+
+  quality-frontend:
+    build: ./frontend
+    ports: ["5173:5173"]
+    depends_on: [quality-backend]

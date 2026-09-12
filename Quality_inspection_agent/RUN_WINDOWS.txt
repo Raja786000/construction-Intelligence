@@ -1,0 +1,41 @@
+CONSTRUCTION INTELLIGENCE HUB — QUALITY INSPECTION AGENT v3.1
+
+1) Open Command Prompt in this project folder.
+
+2) Backend:
+   cd backend
+   python -m venv .venv
+   .venv\Scripts\activate
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
+   python -m uvicorn app.main:app --reload --port 8000
+
+3) Open a SECOND Command Prompt.
+
+4) Frontend:
+   cd frontend
+   npm install
+   npm run dev
+
+5) Open:
+   http://localhost:5173
+
+6) Backend health:
+   http://127.0.0.1:8000/health
+
+7) Swagger:
+   http://127.0.0.1:8000/docs
+
+PASS TEST
+- Upload clean, defect-free construction photos.
+- Select relevant quality categories.
+- Leave all measurements blank.
+- Expected: 100/100, PASS, 0 findings, NONE severity.
+
+DEFECT TEST
+- Use sample_images/01_cracked_wall.jpg through 05_component.jpg.
+- Use measurement values + tolerances when you want deterministic nonconformance testing.
+
+OPTIONAL YOLO
+- Put category weights at models/<category>/model.pt.
+- Install ultralytics in the backend environment when using YOLO weights.

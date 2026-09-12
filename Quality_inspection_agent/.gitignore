@@ -1,0 +1,11 @@
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.env
+uploads/*
+models/**/*.pt
+models/**/*.onnx
+models/**/*.h5
+models/**/*.keras
