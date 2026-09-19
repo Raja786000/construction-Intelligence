@@ -73,16 +73,47 @@ async def detect_safety(
         }
     )
 
-    image_url = (
-        result["output_image"]
-        .replace("\\", "/")
-        .split("/runs/")[-1]
-    )
+    output_raw = str(result.get("output_image", "")).replace("\\", "/")
+    if "/runs/" in output_raw:
+        image_url = f"http://127.0.0.1:8000/results/{output_raw.split('/runs/')[-1]}"
+    elif "runs/" in output_raw:
+        image_url = f"http://127.0.0.1:8000/results/{output_raw.split('runs/')[-1]}"
+    elif output_raw:
+        image_url = f"http://127.0.0.1:8000/results/{os.path.basename(output_raw)}"
+    else:
+        image_url = ""
 
-    image_url = (
-        f"http://127.0.0.1:8000/results/"
-        f"{image_url}"
-    )
+    # Auto-generate Alert in MongoDB if safety violation detected (Note #5 & #8)
+    detections = result.get("detections", {})
+    no_hardhat = detections.get("NO-Hardhat", 0)
+    no_vest = detections.get("NO-Safety Vest", 0)
+
+    generated_alert = None
+    if no_hardhat > 0 or no_vest > 0:
+        from datetime import datetime
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        v_types = []
+        if no_hardhat > 0: v_types.append(f"{no_hardhat} person(s) without Hardhat")
+        if no_vest > 0: v_types.append(f"{no_vest} person(s) without Safety Vest")
+        v_summary = " and ".join(v_types)
+
+        alert_doc = {
+            "_id": f"ALT-PPE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "id": f"ALT-PPE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "title": "PPE Violation Detected by YOLOv11",
+            "message": f"Visual safety inspection detected {v_summary} in active work area.",
+            "severity": "CRITICAL" if no_hardhat > 0 else "HIGH",
+            "source_agent": "Safety Agent (YOLOv11)",
+            "is_resolved": False,
+            "created_at": now_str
+        }
+        try:
+            from app.db.connection import db
+            db["alerts"].insert_one(alert_doc)
+            generated_alert = alert_doc
+            print(f"Safety Violation Alert logged to DB: {alert_doc['title']}")
+        except Exception as e:
+            print(f"Failed to log safety alert to DB: {e}")
 
     return {
 
@@ -105,7 +136,10 @@ async def detect_safety(
             result["recommendation"],
 
         "report":
-            result["report"]
+            result["report"],
+
+        "alert_generated":
+            generated_alert
     }
 
 
@@ -250,203 +284,104 @@ async def detect_video_safety(
 # LIVE WEBCAM DETECTION
 # ==========================================
 
+from pydantic import BaseModel
+from typing import Optional
+
+class LiveDetectPayload(BaseModel):
+    image: str
+
+@router.post("/detect-live")
 @router.post("/live-detect")
-async def live_detect(
-    file: UploadFile = File(...)
-):
-
+async def live_detect_endpoint(payload: LiveDetectPayload):
     try:
+        # STEP 1: PARSE BASE64 IMAGE
+        img_data = payload.image
+        if "," in img_data:
+            img_data = img_data.split(",", 1)[1]
 
-        # ==================================
-        # STEP 1: READ FRAME
-        # ==================================
-
-        contents = await file.read()
-
-
-        # ==================================
-        # STEP 2: CONVERT TO NUMPY
-        # ==================================
-
-        np_array = np.frombuffer(
-            contents,
-            np.uint8
-        )
-
-
-        # ==================================
-        # STEP 3: DECODE IMAGE
-        # ==================================
-
-        frame = cv2.imdecode(
-            np_array,
-            cv2.IMREAD_COLOR
-        )
-
+        image_bytes = base64.b64decode(img_data)
+        np_array = np.frombuffer(image_bytes, np.uint8)
+        frame = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 
         if frame is None:
-
             return {
-                "error":
-                    "Unable to decode frame"
+                "error": "Unable to decode frame",
+                "detections": {},
+                "risk_level": "LOW"
             }
 
+        # STEP 2: YOLO DETECTION
+        result = detect_live_frame(frame)
+        detections = result.get("detections", {})
 
-        # ==================================
-        # STEP 4: YOLO DETECTION
-        # ==================================
-
-        result = detect_live_frame(
-            frame
-        )
-
-
-        detections = result[
-            "detections"
-        ]
-
-
-        # ==================================
-        # STEP 5: PERSISTENT VIOLATION
-        # ==================================
-
-        incident_result = (
-            live_tracker.update(
-                detections
-            )
-        )
-
-
-        # ==================================
-        # STEP 6: ANNOTATED FRAME
-        # ==================================
-
-        annotated_frame = result[
-            "frame"
-        ]
-
-
-        # ==================================
-        # STEP 7: ENCODE JPEG
-        # ==================================
-
-        success, encoded_image = (
-            cv2.imencode(
-                ".jpg",
-                annotated_frame
-            )
-        )
-
-
-        if not success:
-
-            return {
-                "error":
-                    "Unable to encode detection frame"
-            }
-
-
-        # ==================================
-        # STEP 8: BASE64 IMAGE
-        # ==================================
-
-        image_base64 = (
-            base64.b64encode(
-                encoded_image.tobytes()
-            ).decode("utf-8")
-        )
-
-
-        # ==================================
-        # STEP 9: RISK LEVEL
-        # ==================================
-
-        risk_level = "LOW"
-
-
-        if (
-            detections.get(
-                "NO-Hardhat",
-                0
-            ) > 0
-            or
-            detections.get(
-                "NO-Safety Vest",
-                0
-            ) > 0
-        ):
-
-            risk_level = "HIGH"
-
-
-        elif detections.get(
-            "Person",
-            0
-        ) > 0:
-
-            persons = detections.get(
-                "Person",
-                0
-            )
-
-            hardhats = detections.get(
-                "Hardhat",
-                0
-            )
-
-            vests = detections.get(
-                "Safety Vest",
-                0
-            )
-
-            if (
-                hardhats < persons
-                or
-                vests < persons
-            ):
-
-                risk_level = "MEDIUM"
-
-
-        # ==================================
-        # STEP 10: RESPONSE
-        # ==================================
-
-        return {
-
-            "detections":
-                detections,
-
-            "image":
-                image_base64,
-
-            "violation":
-                incident_result[
-                    "violation"
-                ],
-
-            "confirmed_violation":
-                incident_result[
-                    "confirmed"
-                ],
-
-            "incident":
-                incident_result[
-                    "incident"
-                ],
-
-            "risk_level":
-                risk_level
+        # STEP 3: PERSISTENT VIOLATION TRACKING
+        incident_result = live_tracker.update(detections) if live_tracker else {
+            "violation": False,
+            "confirmed": False,
+            "incident": False
         }
 
+        # STEP 4: ENCODE ANNOTATED FRAME TO BASE64
+        annotated_frame = result.get("frame", frame)
+        success, encoded_image = cv2.imencode(".jpg", annotated_frame)
+        image_base64 = ""
+        if success:
+            image_base64 = base64.b64encode(encoded_image.tobytes()).decode("utf-8")
 
-    except Exception as e:
+        # STEP 5: CALCULATE RISK LEVEL
+        no_hardhat = detections.get("NO-Hardhat", 0)
+        no_vest = detections.get("NO-Safety Vest", 0)
+        persons = detections.get("Person", 0)
+        hardhats = detections.get("Hardhat", 0)
+        vests = detections.get("Safety Vest", 0)
 
-        print(
-            "LIVE DETECTION ERROR:",
-            e
-        )
+        risk_level = "LOW"
+        if no_hardhat > 0 or no_vest > 0:
+            risk_level = "HIGH"
+        elif persons > 0 and (hardhats < persons or vests < persons):
+            risk_level = "MEDIUM"
+
+        # STEP 6: AUTO-GENERATE ALERT IF VIOLATION PERSISTS
+        generated_alert = None
+        if no_hardhat > 0 or no_vest > 0:
+            from datetime import datetime
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            v_types = []
+            if no_hardhat > 0: v_types.append(f"{no_hardhat} person(s) without Hardhat")
+            if no_vest > 0: v_types.append(f"{no_vest} person(s) without Safety Vest")
+            v_summary = " and ".join(v_types)
+
+            alert_doc = {
+                "_id": f"ALT-LIVE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "id": f"ALT-LIVE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "title": "Live Camera: PPE Violation Detected",
+                "message": f"Real-time surveillance detected {v_summary}.",
+                "severity": "CRITICAL" if no_hardhat > 0 else "HIGH",
+                "source_agent": "Live Safety Cam (YOLOv11)",
+                "is_resolved": False,
+                "created_at": now_str
+            }
+            try:
+                from app.db.connection import db
+                db["alerts"].insert_one(alert_doc)
+                generated_alert = alert_doc
+            except Exception as e:
+                pass
 
         return {
-            "error": str(e)
+            "detections": detections,
+            "image": f"data:image/jpeg;base64,{image_base64}",
+            "risk_level": risk_level,
+            "violation": incident_result.get("violation", False),
+            "confirmed_violation": incident_result.get("confirmed", False),
+            "incident": incident_result.get("incident", False),
+            "alert_generated": generated_alert
+        }
+
+    except Exception as e:
+        print("LIVE DETECTION ERROR:", e)
+        return {
+            "error": str(e),
+            "detections": {},
+            "risk_level": "LOW"
         }

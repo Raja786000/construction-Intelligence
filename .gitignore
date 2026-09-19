@@ -18,6 +18,8 @@ venv/
 # UPLOADED / GENERATED DATA
 # =========================
 
+runs/
+uploads/
 backend/uploads/
 backend/runs/
 

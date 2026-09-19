@@ -198,60 +198,115 @@ def validate_report_node(state: ReportState) -> ReportState:
     return state
 
 def _mock_llm_generate(state: ReportState) -> dict:
-    # Rule-based generator to produce beautiful natural-language summaries from inputs
     pm = state["project_monitoring"]
     safety = state["safety"]
     risk = state["risk"]
     quality = state["quality"]
-    
-    # Generate executive summary
+    rtype = state.get("report_type", "Daily")
+
     sv = pm.get("schedule_variance", 0.0)
     predicted_delay = pm.get("predicted_delay_days", 0)
-    
-    exec_sum = f"The project {state['project_id']} is currently showing a status of '{pm.get('project_status')}'. "
-    exec_sum += f"The actual progress of the site stands at {pm.get('actual_progress')}% against the planned target of {pm.get('planned_progress')}%, "
-    exec_sum += f"representing a schedule variance of {sv:+.1f}%. "
-    
-    if predicted_delay > 0:
-        exec_sum += f"AI tabular modeling estimates an expected delay of {predicted_delay} days (predicted end date: {pm.get('predicted_completion_date')}). "
-    else:
-        exec_sum += f"The project is predicted to complete on time or ahead of schedule (expected completion: {pm.get('predicted_completion_date')}). "
-        
-    # Incorporate other agents
-    exec_sum += f"Safety surveillance logged {safety.get('ppe_violations', 0)} PPE violations on site. "
-    exec_sum += f"Quality inspections identified {quality.get('defects_detected', 0)} defects. "
-    exec_sum += f"The current site environmental hazard risk is graded as {risk.get('risk_level', 'Low')}."
+    act_prog = pm.get("actual_progress", 0.0)
+    plan_prog = pm.get("planned_progress", 0.0)
+    status = pm.get("project_status", "On Track")
+    violations = safety.get("ppe_violations", 0)
+    defects = quality.get("defects_detected", 0)
+    risk_level = risk.get("risk_level", "Low")
+    risk_score = risk.get("risk_score", 0)
+    pred_date = pm.get("predicted_completion_date", "On Schedule")
+    crit_tasks = pm.get("critical_tasks", [])
 
-    # Construct recommendations based on issues
-    recs = []
-    if sv < 0:
-        recs.append(f"Hasten structural tasks immediately to address the {abs(sv):.1f}% negative progress variance.")
-        recs.append(f"Inspect delayed critical path activities: {', '.join(pm.get('critical_tasks', [])) or 'No critical tasks listed'}.")
-    if safety.get("ppe_violations", 0) > 0:
-        recs.append(f"Review hard hat and safety vest compliance on Zone B camera feeds.")
-    if quality.get("defects_detected", 0) > 0:
-        recs.append("Repair columns and framing alignments showing curings cracks or deviations.")
-    if risk.get("risk_score", 0) > 40:
-        recs.append("Reschedule weather-dependent tasks to avoid forecasted rain delays.")
-    recs.append("Verify sub-contractor headcounts on critical path lines.")
+    if rtype == "Daily":
+        exec_sum = (
+            f"DAILY SITE OPERATIONS SUMMARY ({state['date']}): Project {state['project_id']} is operating under '{status}' status. "
+            f"Daily progress tracking shows current completion at {act_prog:.1f}% against the planned target of {plan_prog:.1f}% (Schedule Variance: {sv:+.1f}%). "
+            f"Today's active surveillance registered {violations} PPE compliance alert(s), while quality inspections identified {defects} active defect item(s). "
+            f"Site environmental hazard is currently rated {risk_level} (Risk Score: {risk_score:.1f}/100)."
+        )
+        pm_sum = (
+            f"Daily Shift Breakdown: {pm.get('active_tasks', 0)} active task(s) currently underway on site. "
+            f"Schedule variance stands at {sv:+.1f}%. Predicted completion date remains {pred_date} with a {pm.get('delay_probability', 0)*100:.1f}% delay probability."
+        )
+        safety_sum = (
+            f"Daily PPE Surveillance: {violations} violation(s) captured by site camera sensors today. "
+            f"Immediate toolbox briefings required before next shift."
+        )
+        risk_sum = f"Daily Environmental Index: {risk_level} risk level. Weather conditions and ground wind levels are suitable for crane & staging operations."
+        quality_sum = f"Daily QA/QC Log: {defects} structural/surface defect(s) logged during today's walkthrough."
+        recs = [
+            f"Enforce morning shift PPE compliance on Zone B workfronts.",
+            f"Verify site material deliveries and concrete curing schedules for tomorrow's shift.",
+            f"Maintain work velocity on critical activities: {', '.join(crit_tasks) if crit_tasks else 'Active structural lines'}."
+        ]
+        actions = [
+            "Conduct pre-shift Toolbox Talk at 07:30 AM focusing on PPE compliance.",
+            "Inspect site perimeter and material storage areas prior to morning kickoff.",
+            "Verify real-time CCTV feed status across high-hazard work areas."
+        ]
 
-    # Actions list
-    actions = [
-        "Review project schedule variances tomorrow morning.",
-        "Re-inspect Zone B for PPE helmet and vest compliance.",
-        "Inspect concrete alignment repairs noted in Quality findings."
-    ]
-    if state["report_type"] == "Weekly":
-        actions.append("Compile milestone projection updates for next week's review.")
-        actions.append("Conduct a safety stand-down briefing for masonry crew.")
+    elif rtype == "Weekly":
+        exec_sum = (
+            f"WEEKLY EXECUTIVE PERFORMANCE REVIEW: Project {state['project_id']} maintained a weekly status of '{status}'. "
+            f"Cumulative progress stands at {act_prog:.1f}% vs planned target of {plan_prog:.1f}% (Net Schedule Variance: {sv:+.1f}%). "
+            f"Over the past 7 days, AI models estimated {predicted_delay} day(s) of anticipated schedule variance (Target Completion: {pred_date}). "
+            f"Weekly safety audits aggregated {violations} PPE violation incident(s), with {defects} quality defect(s) under active remediation."
+        )
+        pm_sum = (
+            f"Weekly Milestone & Velocity Tracking: {pm.get('completed_tasks', 0)} task(s) completed to date with {pm.get('delayed_tasks', 0)} task(s) experiencing delay. "
+            f"Overall milestone completion is at {pm.get('milestone_completion', 0):.1f}%. Delay probability is currently {pm.get('delay_probability', 0)*100:.1f}%."
+        )
+        safety_sum = (
+            f"Weekly Safety & Compliance Summary: Total 7-day incident count is {violations} PPE non-compliance event(s). "
+            f"Contractor safety adherence score is at {max(100 - violations * 8, 60)}%."
+        )
+        risk_sum = f"Weekly Risk Matrix: Aggregated risk index is {risk_level} ({risk_score:.1f}/100). Upcoming 7-day weather forecast monitored for precipitation impacts."
+        quality_sum = f"Weekly QA/QC Remediation: {defects} non-conformance defect(s) tracked. Re-inspection scheduled for rectified structural elements."
+        recs = [
+            f"Accelerate weekly task cycles on critical path lines: {', '.join(crit_tasks) if crit_tasks else 'Substructure framing'}.",
+            f"Conduct mandatory weekly safety stand-down with sub-contractor site supervisors.",
+            f"Review lookahead schedule for the upcoming 14-day milestone delivery window."
+        ]
+        actions = [
+            "Convene Weekly Sub-contractor Coordination Meeting every Monday at 09:00 AM.",
+            "Audit milestone progress deliverables against the master construction baseline.",
+            "Review weekly quality NCR logs and verify structural closure sign-offs."
+        ]
+
+    else:  # Monthly
+        exec_sum = (
+            f"MONTHLY STRATEGIC PORTFOLIO GOVERNANCE REPORT: Comprehensive monthly review for Project {state['project_id']} (Health Status: '{status}'). "
+            f"Total project progress reached {act_prog:.1f}% against planned milestone baseline of {plan_prog:.1f}% ({sv:+.1f}% variance). "
+            f"Predictive machine learning models forecast completion by {pred_date} (projected schedule impact: {predicted_delay} days). "
+            f"Monthly safety compliance rate is maintained at {max(100 - violations * 5, 75)}%, with {defects} QA/QC defect item(s) in governance registry."
+        )
+        pm_sum = (
+            f"Monthly Earned Value & Schedule Diagnostics: Planned progress {plan_prog:.1f}% vs Actual progress {act_prog:.1f}%. "
+            f"Total tasks completed: {pm.get('completed_tasks', 0)}, Active tasks in flight: {pm.get('active_tasks', 0)}. "
+            f"Milestone completion velocity is tracking at {pm.get('milestone_completion', 0):.1f}%."
+        )
+        safety_sum = (
+            f"Monthly Safety Governance: Monthly safety surveillance recorded {violations} aggregate PPE non-compliances. "
+            f"Zero critical lost-time incidents (LTI) recorded across the reporting cycle."
+        )
+        risk_sum = f"Monthly Macro Risk Analysis: Composite risk profile evaluated at {risk_level} ({risk_score:.1f}/100). Supply chain and weather contingencies active."
+        quality_sum = f"Monthly Quality Assurance: {defects} structural inspections logged. Quality compliance benchmark index is within enterprise tolerances."
+        recs = [
+            f"Conduct monthly executive budget review and resource re-allocation for critical path tasks.",
+            f"Re-baseline project schedule if cumulative variance exceeds 10% threshold.",
+            f"Implement enhanced vendor oversight for long-lead structural materials."
+        ]
+        actions = [
+            "Submit monthly executive dossier to Project Steering Committee.",
+            "Perform comprehensive monthly site safety and environmental compliance audit.",
+            "Finalize monthly contractor progress billing based on verified milestone achievements."
+        ]
 
     return {
         "executive_summary": exec_sum,
-        "project_monitoring_summary": f"The project exhibits actual progress of {pm.get('actual_progress')}% vs planned progress of {pm.get('planned_progress')}%. "
-                                     f"Predictions indicate a {pm.get('delay_probability')*100:.1f}% likelihood of project delay, with an expected delay duration of {predicted_delay} days.",
-        "safety_summary": safety.get("summary", "No safety compliance events reported."),
-        "risk_summary": risk.get("summary", "Environmental parameters within safe limits."),
-        "quality_summary": quality.get("summary", "No structural inspection defects detected."),
+        "project_monitoring_summary": pm_sum,
+        "safety_summary": safety_sum,
+        "risk_summary": risk_sum,
+        "quality_summary": quality_sum,
         "recommendations": recs,
         "next_actions": actions
     }

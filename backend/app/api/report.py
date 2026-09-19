@@ -19,6 +19,10 @@ def generate_daily_report(request: ReportRequest):
 def generate_weekly_report(request: ReportRequest):
     return run_report_agent(request.project_id, "Weekly")
 
+@router.post("/monthly")
+def generate_monthly_report(request: ReportRequest):
+    return run_report_agent(request.project_id, "Monthly")
+
 @router.get("/{report_id}")
 def get_report(report_id: str):
     try:

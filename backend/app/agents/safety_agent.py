@@ -53,6 +53,35 @@ def assess_risk(state: SafetyAgentState):
 
     return state
 
+def _generate_rule_based_recommendation(detections: dict, risk: str, compliance=None) -> str:
+    no_hardhat = detections.get("NO-Hardhat", 0)
+    no_vest = detections.get("NO-Safety Vest", 0)
+    no_mask = detections.get("NO-Mask", 0)
+
+    actions = []
+    if no_hardhat > 0:
+        actions.append(f"Issue immediate hardhat mandate for {no_hardhat} personnel observed in active zones.")
+    if no_vest > 0:
+        actions.append(f"Enforce high-visibility safety vest compliance across {no_vest} identified workers.")
+    if not actions:
+        actions.append("Maintain standard protocols; verified full PPE compliance across inspected zone.")
+
+    comp_str = f"\n**Compliance Score:** {compliance}%\n" if compliance is not None else ""
+
+    return f"""### Professional Safety Recommendation
+**Risk Assessment:** {risk}{comp_str}
+
+1. **Immediate Corrective Actions:**
+{chr(10).join([f"   - {a}" for a in actions])}
+
+2. **Preventive Measures:**
+   - Conduct daily pre-shift Toolbox Talk emphasizing personal protective equipment.
+   - Restrict access to designated high-risk zones without verified mandatory gear.
+
+3. **Safety Advice:**
+   - Safety gear compliance is mandatory for all personnel and sub-contractors on site.
+"""
+
 def generate_recommendation(state: SafetyAgentState):
 
     print("\n========== RECOMMENDATION NODE ==========")
@@ -63,68 +92,51 @@ def generate_recommendation(state: SafetyAgentState):
     compliance = state.get("compliance_score")
 
     if compliance is not None:
-
-        prompt = f"""
-You are an experienced Construction Safety Officer.
-
+        prompt = f"""You are an experienced Construction Safety Officer.
 Analyze the following CCTV video safety monitoring results.
-
-Detected Objects:
-{detections}
-
-Compliance Score:
-{compliance}%
-
-Overall Risk Level:
-{risk}
+Detected Objects: {detections}
+Compliance Score: {compliance}%
+Overall Risk Level: {risk}
 
 Generate a SHORT professional construction safety recommendation.
-
 Include:
-
 1. Professional Safety Recommendation
 2. Immediate Corrective Actions
 3. Preventive Measures
 4. Short Safety Advice
-
-Keep the response concise and practical.
-
-Do not repeat the detection list unnecessarily.
-Do not write a long memorandum.
-"""
-
+Keep the response concise and practical."""
     else:
-
-        prompt = f"""
-You are an experienced Construction Safety Officer.
-
+        prompt = f"""You are an experienced Construction Safety Officer.
 Analyze the following PPE detection results.
-
-Detected Objects:
-{detections}
-
-Overall Risk Level:
-{risk}
+Detected Objects: {detections}
+Overall Risk Level: {risk}
 
 Generate a SHORT professional safety recommendation.
-
 Include:
-
 1. Professional Safety Recommendation
 2. Immediate Corrective Actions
 3. Preventive Measures
 4. Short Safety Advice
+Keep the response concise and practical."""
 
-Keep the response concise and practical.
-Do not write a long memorandum.
-"""
+    recommendation = ""
+    if llm is not None:
+        try:
+            response = llm.invoke(prompt)
+            if hasattr(response, "content") and response.content:
+                recommendation = str(response.content)
+            elif hasattr(response, "text") and response.text:
+                recommendation = str(response.text)
+            else:
+                recommendation = str(response)
+        except Exception as e:
+            print(f"Notice: Gemini LLM invocation failed ({e}). Using rule-based safety recommendation.")
+            recommendation = ""
 
-    response = llm.invoke(prompt)
-
-    recommendation = response.text
+    if not recommendation:
+        recommendation = _generate_rule_based_recommendation(detections, risk, compliance)
 
     state["recommendation"] = recommendation
-
     print(recommendation)
 
     return state

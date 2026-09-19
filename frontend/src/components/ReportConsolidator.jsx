@@ -39,7 +39,9 @@ export default function ReportConsolidator({ projects, activeProject }) {
     try {
       const endpoint = reportType === "Daily" 
         ? "http://127.0.0.1:8000/api/reports/daily" 
-        : "http://127.0.0.1:8000/api/reports/weekly";
+        : (reportType === "Monthly"
+            ? "http://127.0.0.1:8000/api/reports/monthly"
+            : "http://127.0.0.1:8000/api/reports/weekly");
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -95,6 +97,13 @@ export default function ReportConsolidator({ projects, activeProject }) {
                   onClick={() => setReportType("Weekly")}
                 >
                   Weekly Report
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${reportType === "Monthly" ? "btn-primary" : "btn-outline-primary"}`}
+                  onClick={() => setReportType("Monthly")}
+                >
+                  Monthly Report
                 </button>
               </div>
             </div>

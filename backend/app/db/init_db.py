@@ -1,10 +1,27 @@
 import os
+import sys
+
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_backend_dir = os.path.abspath(os.path.join(_current_dir, "..", ".."))
+_root_dir = os.path.abspath(os.path.join(_current_dir, "..", "..", ".."))
+for p in [_root_dir, _backend_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import pandas as pd
 from app.db.connection import db
 from src.preprocessing import clean_dataframe
 from src.feature_engineering import engineer_project_features
 
-def seed_database(workspace_dir=None):
+def seed_database(workspace_dir=None, force=False):
+    if not force:
+        try:
+            if db["projects"].count_documents({}) > 0:
+                print("Database already contains data, skipping startup re-seed.")
+                return True
+        except Exception as e:
+            pass
+
     if not workspace_dir:
         workspace_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
@@ -203,7 +220,241 @@ def create_demo_projects():
     ]
     db["milestones"].insert_many(p003_milestones)
 
-    print("Successfully created demo projects (P001, P002, P003) in database.")
+    # Seed Worker Management, Alerts, and Weather entities
+    seed_workers_alerts_weather()
+    print("Successfully created demo projects (P001, P002, P003, Metro Bridge) in database.")
+
+def seed_workers_alerts_weather():
+    from datetime import datetime
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. Metro Bridge (Exact match to handwritten notes!)
+    db["projects"].delete_many({"_id": "PROJ-METRO"})
+    db["projects"].insert_one({
+        "_id": "PROJ-METRO",
+        "name": "Metro Bridge Project",
+        "type": "Infrastructure",
+        "client": "ABC Construction Ltd",
+        "budget": 20.0,
+        "spent": 1.8,
+        "budget_currency": "₹ Cr",
+        "location": "Hyderabad, Telangana",
+        "start_date": "2024-01-10",
+        "planned_end_date": "2025-08-30",
+        "current_date": "2024-09-19",
+        "planned_duration": 598,
+        "actual_duration": 252,
+        "actual_progress": 68.0,
+        "planned_progress": 70.0,
+        "schedule_variance": -2.0,
+        "schedule_status": "On Track",
+        "risk_score": 38.5,
+        "risk_level": "Medium"
+    })
+
+    # Update existing demo projects with budget/client/location
+    db["projects"].update_one(
+        {"_id": "P001"},
+        {"$set": {
+            "client": "Apex Global Real Estate",
+            "budget": 15.0,
+            "spent": 8.4,
+            "budget_currency": "₹ Cr",
+            "location": "Hitec City, Hyderabad",
+            "risk_score": 74.0,
+            "risk_level": "High"
+        }}
+    )
+    db["projects"].update_one(
+        {"_id": "P002"},
+        {"$set": {
+            "client": "Telangana Health Services",
+            "budget": 8.5,
+            "spent": 4.25,
+            "budget_currency": "₹ Cr",
+            "location": "Gachibowli, Hyderabad",
+            "risk_score": 25.0,
+            "risk_level": "Low"
+        }}
+    )
+    db["projects"].update_one(
+        {"_id": "P003"},
+        {"$set": {
+            "client": "National Highways Authority",
+            "budget": 35.0,
+            "spent": 24.5,
+            "budget_currency": "₹ Cr",
+            "location": "Outer Ring Road, Hyderabad",
+            "risk_score": 18.0,
+            "risk_level": "Low"
+        }}
+    )
+
+    # 2. Worker Management (Matches Note #4)
+    db["workers"].delete_many({})
+    workers = [
+        {
+            "_id": "W101",
+            "worker_id": "W101",
+            "name": "Rajesh Kumar",
+            "assigned_task": "Brick work",
+            "helmet": "Yes",
+            "vest": "No",
+            "mobile": "+91 98765 43210",
+            "certification": "Certified Mason Grade-1",
+            "project_id": "PROJ-METRO",
+            "ppe_status": "VIOLATION",
+            "created_at": now_str
+        },
+        {
+            "_id": "W102",
+            "worker_id": "W102",
+            "name": "Sunil Verma",
+            "assigned_task": "Steel Framing Erection",
+            "helmet": "Yes",
+            "vest": "Yes",
+            "mobile": "+91 98451 23456",
+            "certification": "OSHA-30 Certified",
+            "project_id": "PROJ-METRO",
+            "ppe_status": "COMPLIANT",
+            "created_at": now_str
+        },
+        {
+            "_id": "W103",
+            "worker_id": "W103",
+            "name": "Amit Patel",
+            "assigned_task": "Foundation Concrete Pouring",
+            "helmet": "No",
+            "vest": "Yes",
+            "mobile": "+91 97123 45678",
+            "certification": "Concrete Specialist",
+            "project_id": "P001",
+            "ppe_status": "VIOLATION",
+            "created_at": now_str
+        },
+        {
+            "_id": "W104",
+            "worker_id": "W104",
+            "name": "Ramesh Naidu",
+            "assigned_task": "Scaffolding Safety Audit",
+            "helmet": "Yes",
+            "vest": "Yes",
+            "mobile": "+91 99887 65432",
+            "certification": "Site Safety Auditor Level-2",
+            "project_id": "PROJ-METRO",
+            "ppe_status": "COMPLIANT",
+            "created_at": now_str
+        },
+        {
+            "_id": "W105",
+            "worker_id": "W105",
+            "name": "Deepak Sharma",
+            "assigned_task": "Tower Crane #2 Signaling",
+            "helmet": "Yes",
+            "vest": "Yes",
+            "mobile": "+91 98234 56789",
+            "certification": "Master Rigger & Signaler",
+            "project_id": "P001",
+            "ppe_status": "COMPLIANT",
+            "created_at": now_str
+        },
+        {
+            "_id": "W106",
+            "worker_id": "W106",
+            "name": "Mohammed Imran",
+            "assigned_task": "Electrical Conduit Trenching",
+            "helmet": "No",
+            "vest": "No",
+            "mobile": "+91 98670 12345",
+            "certification": "Licensed Industrial Electrician",
+            "project_id": "P002",
+            "ppe_status": "VIOLATION",
+            "created_at": now_str
+        },
+        {
+            "_id": "W107",
+            "worker_id": "W107",
+            "name": "Karthik Reddy",
+            "assigned_task": "Rebar Tying Floor 12",
+            "helmet": "Yes",
+            "vest": "Yes",
+            "mobile": "+91 99123 98765",
+            "certification": "Structural Ironworker",
+            "project_id": "PROJ-METRO",
+            "ppe_status": "COMPLIANT",
+            "created_at": now_str
+        }
+    ]
+    db["workers"].insert_many(workers)
+
+    # 3. Alerts Notification Feed (Matches Note #8)
+    db["alerts"].delete_many({})
+    alerts = [
+        {
+            "_id": "ALT-001",
+            "title": "Worker without Helmet Detected",
+            "message": "Worker W103 detected without mandatory helmet near Foundation Concrete Pouring zone.",
+            "severity": "CRITICAL",
+            "source_agent": "Safety Agent (YOLOv11)",
+            "is_resolved": False,
+            "created_at": now_str
+        },
+        {
+            "_id": "ALT-002",
+            "title": "Heavy Rain Tomorrow Forecast",
+            "message": "38mm precipitation predicted tomorrow for Hyderabad. Risk of water-logging and concrete curing delay.",
+            "severity": "HIGH",
+            "source_agent": "Weather Agent",
+            "is_resolved": False,
+            "created_at": now_str
+        },
+        {
+            "_id": "ALT-003",
+            "title": "Budget Exceeded on Structural Materials",
+            "message": "Actual cost for steel reinforcement exceeded planned threshold by 7.0% (₹ 35 Lakhs variance).",
+            "severity": "HIGH",
+            "source_agent": "Cost Agent",
+            "is_resolved": False,
+            "created_at": now_str
+        },
+        {
+            "_id": "ALT-004",
+            "title": "Concrete Work Delayed",
+            "message": "Steel framing erection milestone behind schedule by 4 days on Metro Bridge sector.",
+            "severity": "MEDIUM",
+            "source_agent": "Schedule Agent",
+            "is_resolved": False,
+            "created_at": now_str
+        },
+        {
+            "_id": "ALT-005",
+            "title": "PPE Vest Non-Compliance",
+            "message": "Worker W101 observed without high-visibility safety vest during brick masonry.",
+            "severity": "MEDIUM",
+            "source_agent": "Safety Agent (YOLOv11)",
+            "is_resolved": False,
+            "created_at": now_str
+        }
+    ]
+    db["alerts"].insert_many(alerts)
+
+    # 4. Weather Telemetry (Matches Note #7)
+    db["weather"].delete_many({})
+    db["weather"].insert_one({
+        "_id": "WTH-HYD",
+        "location": "Hyderabad, Telangana",
+        "temperature_c": 28.5,
+        "rainfall_mm": 38.0,
+        "wind_speed_kmh": 18.5,
+        "humidity_pct": 78,
+        "condition": "Rain / Thunderstorm",
+        "tomorrow_forecast": "Heavy Rain (45mm)",
+        "tomorrow_rain_alert": True,
+        "alert_level": "ORANGE_ALERT",
+        "updated_at": now_str
+    })
+
+    print(f"Successfully seeded {len(workers)} workers, {len(alerts)} alerts, and weather telemetry.")
 
 if __name__ == "__main__":
     seed_database()
