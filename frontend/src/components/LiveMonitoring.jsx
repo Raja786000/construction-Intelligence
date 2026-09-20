@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { API_BASE_URL } from "../api/client";
 
 export default function LiveMonitoring() {
   const videoRef = useRef(null);
@@ -115,7 +116,7 @@ export default function LiveMonitoring() {
           setLoading(true);
 
           const response = await fetch(
-            "http://127.0.0.1:8000/safety/live-detect",
+            `${API_BASE_URL}/safety/live-detect`,
             {
               method: "POST",
               body: formData,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 
 const LANGGRAPH_STEPS = [
   "Collect Agent Results (fetching Project, Safety, Risk, Quality stats)",
@@ -38,10 +39,10 @@ export default function ReportConsolidator({ projects, activeProject }) {
 
     try {
       const endpoint = reportType === "Daily" 
-        ? "http://127.0.0.1:8000/api/reports/daily" 
+        ? `${API_BASE_URL}/api/reports/daily` 
         : (reportType === "Monthly"
-            ? "http://127.0.0.1:8000/api/reports/monthly"
-            : "http://127.0.0.1:8000/api/reports/weekly");
+            ? `${API_BASE_URL}/api/reports/monthly`
+            : `${API_BASE_URL}/api/reports/weekly`);
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -70,7 +71,7 @@ export default function ReportConsolidator({ projects, activeProject }) {
 
   const handleDownloadPdf = () => {
     if (report) {
-      window.open(`http://127.0.0.1:8000/api/reports/${report.id}/pdf`, "_blank");
+      window.open(`${API_BASE_URL}/api/reports/${report.id}/pdf`, "_blank");
     }
   };
 

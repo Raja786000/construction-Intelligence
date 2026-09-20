@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   CheckCircle,
   AlertTriangle,
@@ -24,7 +25,7 @@ export default function QualityMonitoring() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/quality/categories");
+      const res = await fetch(`${API_BASE_URL}/api/quality/categories`);
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
@@ -55,7 +56,7 @@ export default function QualityMonitoring() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/quality/inspect", {
+      const res = await fetch(`${API_BASE_URL}/api/quality/inspect`, {
         method: "POST",
         body: formData
       });

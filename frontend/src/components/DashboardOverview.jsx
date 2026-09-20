@@ -13,6 +13,8 @@ import {
   Bell,
   Sparkles
 } from "lucide-react";
+import { apiFetch } from "../api/client";
+import { KpiSkeletonGrid } from "./Skeleton";
 
 export default function DashboardOverview({ onNavigate }) {
   const [stats, setStats] = useState(null);
@@ -24,7 +26,7 @@ export default function DashboardOverview({ onNavigate }) {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/dashboard/stats");
+      const res = await apiFetch("/api/dashboard/stats");
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -118,6 +120,9 @@ export default function DashboardOverview({ onNavigate }) {
       </div>
 
       {/* KPI GRID - EXACT MATCH TO NOTE #2 */}
+      {loading ? (
+        <KpiSkeletonGrid count={7} />
+      ) : (
       <div className="kpi-grid">
         {/* 1. Total Projects */}
         <div className="kpi-card" onClick={() => onNavigate("projects")} style={{ cursor: "pointer" }}>
@@ -223,6 +228,7 @@ export default function DashboardOverview({ onNavigate }) {
           <div className="kpi-subtext">Total allocated: ₹ {data.budget?.total || 20.0} Cr</div>
         </div>
       </div>
+      )}
 
       {/* TWO COLUMNS: RECENT ALERTS + ACTION HUB */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>

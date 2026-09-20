@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   CloudRain,
   Thermometer,
@@ -23,7 +24,7 @@ export default function WeatherWidget() {
   const fetchWeather = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/api/weather");
+      const res = await fetch(`${API_BASE_URL}/api/weather`);
       if (res.ok) {
         const data = await res.json();
         setWeather(data);

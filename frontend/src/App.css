@@ -409,6 +409,86 @@
   padding: 28px;
 }
 
+/* Content fade-in when switching tabs, so navigation feels intentional
+   rather than an abrupt content swap. Respects prefers-reduced-motion via
+   the global rule in index.css. */
+.content-wrapper > div {
+  animation: content-fade-in 0.18s ease;
+}
+
+@keyframes content-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Theme toggle (light/dark) button, placed in the sidebar footer */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.theme-toggle-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+html[data-theme="light"] .theme-toggle-btn {
+  background: rgba(15, 23, 42, 0.05);
+}
+html[data-theme="light"] .theme-toggle-btn:hover {
+  background: rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+}
+
+/* Backend-unreachable connection banner, shown by App.jsx when the initial
+   API calls fail (e.g. the FastAPI server hasn't been started yet). */
+.connection-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.connection-banner button {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Mobile hamburger toggle button (hidden on desktop/tablet) */
+.mobile-menu-btn {
+  display: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .app-sidebar {
     width: 70px;
@@ -425,5 +505,50 @@
   }
   .content-wrapper {
     padding: 16px;
+  }
+}
+
+/* On real phones, an icon-only rail is still cramped and hard to tap
+   accurately. Below 560px the sidebar becomes a full off-canvas drawer,
+   opened by a hamburger button in the header, closed by tapping the
+   backdrop or a nav item. */
+@media (max-width: 560px) {
+  .app-sidebar {
+    width: 260px;
+    padding: 20px 14px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .brand-text, .nav-text, .nav-badge, .sidebar-footer-text {
+    display: block;
+  }
+  .sidebar-footer > div {
+    display: flex !important;
+  }
+  .app-main {
+    margin-left: 0;
+  }
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+  .sidebar-backdrop.mobile-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+  .app-header {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .header-title-wrap p {
+    display: none;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr;
   }
 }

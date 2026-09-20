@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   TrendingDown,
   Clock,
@@ -43,7 +44,7 @@ export default function RiskPrediction() {
 
   const runSchedulePredict = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/risk/predict-delay", {
+      const res = await fetch(`${API_BASE_URL}/api/risk/predict-delay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,7 +66,7 @@ export default function RiskPrediction() {
 
   const runCostPredict = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/risk/predict-cost", {
+      const res = await fetch(`${API_BASE_URL}/api/risk/predict-cost`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,7 +87,7 @@ export default function RiskPrediction() {
 
   const runEquipPredict = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/risk/predict-equipment", {
+      const res = await fetch(`${API_BASE_URL}/api/risk/predict-equipment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

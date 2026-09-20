@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   Users,
   Plus,
@@ -46,8 +47,8 @@ export default function WorkerManagement() {
     try {
       setLoading(true);
       const url = filterViolationOnly
-        ? "http://127.0.0.1:8000/api/workers?ppe_violation_only=true"
-        : "http://127.0.0.1:8000/api/workers";
+        ? `${API_BASE_URL}/api/workers?ppe_violation_only=true`
+        : `${API_BASE_URL}/api/workers`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -63,7 +64,7 @@ export default function WorkerManagement() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/workers", {
+      const res = await fetch(`${API_BASE_URL}/api/workers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -81,7 +82,7 @@ export default function WorkerManagement() {
     e.preventDefault();
     if (!selectedWorker) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/workers/${selectedWorker.worker_id || selectedWorker._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/workers/${selectedWorker.worker_id || selectedWorker._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -98,7 +99,7 @@ export default function WorkerManagement() {
   const handleDelete = async (workerId) => {
     if (!window.confirm(`Are you sure you want to remove Worker ${workerId}?`)) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/workers/${workerId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/workers/${workerId}`, {
         method: "DELETE"
       });
       if (res.ok) {
@@ -111,7 +112,7 @@ export default function WorkerManagement() {
 
   const handleTogglePPE = async (workerId, ppeType) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/workers/${workerId}/toggle-ppe?ppe_type=${ppeType}`, {
+      const res = await fetch(`${API_BASE_URL}/api/workers/${workerId}/toggle-ppe?ppe_type=${ppeType}`, {
         method: "PATCH"
       });
       if (res.ok) {

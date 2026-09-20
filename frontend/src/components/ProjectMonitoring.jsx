@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 
 export default function ProjectMonitoring({ projects, activeProject, setActiveProject, onPrediction }) {
   const [prediction, setPrediction] = useState(null);
@@ -14,7 +15,7 @@ export default function ProjectMonitoring({ projects, activeProject, setActivePr
 
   const fetchProjectDetail = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/projects/${activeProject}`);
+      const response = await fetch(`${API_BASE_URL}/api/projects/${activeProject}`);
       if (response.ok) {
         const data = await response.json();
         setProjectDetail(data);
@@ -30,7 +31,7 @@ export default function ProjectMonitoring({ projects, activeProject, setActivePr
     setLoading(true);
     setPrediction(null);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/project-monitoring/predict", {
+      const response = await fetch(`${API_BASE_URL}/api/project-monitoring/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project_id: activeProject }),

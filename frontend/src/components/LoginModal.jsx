@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Lock, User, ShieldCheck, HardHat, Building2 } from "lucide-react";
+import { Lock, User, ShieldCheck, HardHat, Building2, Eye, EyeOff } from "lucide-react";
+import { apiFetch } from "../api/client";
 
 export default function LoginModal({ onLoginSuccess }) {
   const [username, setUsername] = useState("admin@construction.ai");
   const [password, setPassword] = useState("admin123");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -13,7 +15,7 @@ export default function LoginModal({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -29,7 +31,8 @@ export default function LoginModal({ onLoginSuccess }) {
       onLoginSuccess(data.user);
     } catch (err) {
       console.warn("Backend auth offline, using local session:", err);
-      // Fallback local login for smooth demoing
+      // Fallback local login for smooth demoing when the backend isn't
+      // running yet — the person can still explore the UI.
       const fallbackUser = {
         username: username || "admin@construction.ai",
         name: "Site Admin",
@@ -43,15 +46,18 @@ export default function LoginModal({ onLoginSuccess }) {
     }
   };
 
+  // Credentials here match the table in README.md / HOW_TO_RUN.md exactly,
+  // so the "1-click demo" buttons and the documented manual credentials
+  // never drift apart.
   const handleQuickDemo = (userType) => {
     if (userType === "admin") {
       setUsername("admin@construction.ai");
       setPassword("admin123");
     } else if (userType === "safety") {
-      setUsername("safety.officer@construction.ai");
+      setUsername("safety@construction.ai");
       setPassword("safety123");
     } else {
-      setUsername("pm.verma@construction.ai");
+      setUsername("manager@construction.ai");
       setPassword("manager123");
     }
   };
@@ -117,14 +123,31 @@ export default function LoginModal({ onLoginSuccess }) {
             <div style={{ position: "relative" }}>
               <Lock size={18} style={{ position: "absolute", left: "14px", top: "12px", color: "var(--text-muted)" }} />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="form-control-ci"
-                style={{ paddingLeft: "42px" }}
+                style={{ paddingLeft: "42px", paddingRight: "42px" }}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "8px",
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  padding: "4px",
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 

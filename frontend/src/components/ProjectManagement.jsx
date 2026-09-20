@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   Plus,
   Edit2,
@@ -47,7 +48,7 @@ export default function ProjectManagement({ activeProject, setActiveProject }) {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://127.0.0.1:8000/api/projects");
+      const res = await fetch(`${API_BASE_URL}/api/projects`);
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
@@ -62,7 +63,7 @@ export default function ProjectManagement({ activeProject, setActiveProject }) {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/projects", {
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -80,7 +81,7 @@ export default function ProjectManagement({ activeProject, setActiveProject }) {
     e.preventDefault();
     if (!selectedProject) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/projects/${selectedProject._id || selectedProject.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/projects/${selectedProject._id || selectedProject.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -97,7 +98,7 @@ export default function ProjectManagement({ activeProject, setActiveProject }) {
   const handleDelete = async (projectId) => {
     if (!window.confirm("Are you sure you want to delete this project from MongoDB?")) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
         method: "DELETE"
       });
       if (res.ok) {
@@ -111,7 +112,7 @@ export default function ProjectManagement({ activeProject, setActiveProject }) {
   const handleView = async (project) => {
     setSelectedProject(project);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/projects/${project._id || project.id}`);
+      const res = await fetch(`${API_BASE_URL}/api/projects/${project._id || project.id}`);
       if (res.ok) {
         const data = await res.json();
         setViewDetails(data);

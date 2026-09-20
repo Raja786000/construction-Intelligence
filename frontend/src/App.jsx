@@ -12,7 +12,12 @@ import {
   LogOut,
   HardHat,
   ChevronDown,
-  UserCheck
+  UserCheck,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  WifiOff
 } from "lucide-react";
 
 // Module Components
@@ -26,6 +31,8 @@ import RiskPrediction from "./components/RiskPrediction";
 import WeatherWidget from "./components/WeatherWidget";
 import AlertsCenter from "./components/AlertsCenter";
 import ReportConsolidator from "./components/ReportConsolidator";
+import { apiFetch } from "./api/client";
+import { useToast } from "./context/ToastContext";
 
 export default function App() {
   // Authentication State (Note #1)
@@ -38,6 +45,21 @@ export default function App() {
   const [alertsCount, setAlertsCount] = useState(5);
   const [siteWeather, setSiteWeather] = useState(null);
 
+  // UI State: theme, mobile drawer, and backend connectivity
+  const [theme, setTheme] = useState(() => localStorage.getItem("ci_theme") || "dark");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [backendUnreachable, setBackendUnreachable] = useState(false);
+  const { showToast } = useToast();
+
+  // Apply the persisted theme to <html data-theme="..."> so index.css's
+  // light-theme variable overrides take effect (see index.css).
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("ci_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+
   // Initialize Session
   useEffect(() => {
     const savedUser = localStorage.getItem("ci_user");
@@ -48,14 +70,20 @@ export default function App() {
         localStorage.removeItem("ci_user");
       }
     }
-    fetchProjects();
-    fetchWeather();
-    fetchAlertsCount();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    const results = await Promise.allSettled([fetchProjects(), fetchWeather(), fetchAlertsCount()]);
+    const allNetworkErrors = results.every(
+      (r) => r.status === "rejected" && r.reason?.isNetworkError
+    );
+    setBackendUnreachable(allNetworkErrors);
+  };
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/projects");
+      const res = await apiFetch("/api/projects");
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
@@ -65,30 +93,33 @@ export default function App() {
       }
     } catch (err) {
       console.warn("Could not load projects on mount:", err);
+      throw err;
     }
   };
 
   const fetchWeather = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/weather");
+      const res = await apiFetch("/api/weather");
       if (res.ok) {
         const data = await res.json();
         setSiteWeather(data);
       }
     } catch (err) {
       // Weather fallback
+      throw err;
     }
   };
 
   const fetchAlertsCount = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/alerts?unresolved_only=true");
+      const res = await apiFetch("/api/alerts?unresolved_only=true");
       if (res.ok) {
         const data = await res.json();
         setAlertsCount(data.length);
       }
     } catch (err) {
       // Use default
+      throw err;
     }
   };
 
@@ -96,6 +127,17 @@ export default function App() {
     localStorage.removeItem("ci_user");
     localStorage.removeItem("ci_token");
     setCurrentUser(null);
+    showToast("Signed out successfully.", "info");
+  };
+
+  const handleRetryConnection = () => {
+    showToast("Retrying connection to the backend…", "info");
+    loadInitialData();
+  };
+
+  const handleNavigate = (tab) => {
+    setActiveTab(tab);
+    setMobileNavOpen(false);
   };
 
   const navItems = [
@@ -112,13 +154,27 @@ export default function App() {
 
   // If not logged in, present the Login Module (Note #1)
   if (!currentUser) {
-    return <LoginModal onLoginSuccess={(user) => setCurrentUser(user)} />;
+    return (
+      <LoginModal
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          showToast(`Welcome back, ${user.name || user.username}.`, "success");
+        }}
+      />
+    );
   }
 
   return (
     <div className="app-container">
+      {/* Mobile off-canvas backdrop, only visible/rendered when the drawer is open */}
+      <div
+        className={`sidebar-backdrop ${mobileNavOpen ? "mobile-open" : ""}`}
+        onClick={() => setMobileNavOpen(false)}
+        aria-hidden="true"
+      />
+
       {/* SIDEBAR NAVIGATION (Exact Site Map from Handwritten Note #3) */}
-      <aside className="app-sidebar">
+      <aside className={`app-sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
         {/* Brand Header */}
         <div className="sidebar-brand">
           <div className="brand-icon">
@@ -139,7 +195,7 @@ export default function App() {
               <button
                 key={item.id}
                 className={`nav-item-btn ${isActive ? "active" : ""}`}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleNavigate(item.id)}
               >
                 <Icon size={18} />
                 <span className="nav-text">{item.label}</span>
@@ -178,6 +234,14 @@ export default function App() {
             </div>
 
             <button
+              type="button"
+              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+            <button
               title="Sign Out"
               style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "6px" }}
               onClick={handleLogout}
@@ -190,8 +254,30 @@ export default function App() {
 
       {/* MAIN VIEWPORT */}
       <main className="app-main">
+        {/* Backend connectivity banner — only shown when every initial API
+            call failed to reach the server at all (not just a 4xx/5xx). */}
+        {backendUnreachable && (
+          <div className="connection-banner">
+            <WifiOff size={16} />
+            <span>
+              Can't reach the backend. Make sure it's running
+              (uvicorn backend.main:app --port 8000), then retry.
+            </span>
+            <button onClick={handleRetryConnection}>Retry</button>
+          </div>
+        )}
+
         {/* Top Header Bar */}
         <header className="app-header">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+            onClick={() => setMobileNavOpen((open) => !open)}
+          >
+            {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
           <div className="header-title-wrap">
             <h1>
               {navItems.find((n) => n.id === activeTab)?.label}
@@ -214,7 +300,7 @@ export default function App() {
                   cursor: "pointer",
                   fontSize: "0.82rem"
                 }}
-                onClick={() => setActiveTab("weather")}
+                onClick={() => handleNavigate("weather")}
               >
                 <CloudRain size={16} color="#38bdf8" />
                 <span style={{ color: "#fff", fontWeight: "600" }}>{siteWeather.temperature_c}°C</span>
@@ -259,7 +345,7 @@ export default function App() {
                 cursor: "pointer",
                 position: "relative"
               }}
-              onClick={() => setActiveTab("alerts")}
+              onClick={() => handleNavigate("alerts")}
               title="View Alerts"
             >
               <Bell size={18} />
@@ -282,7 +368,7 @@ export default function App() {
         {/* Content Body Router */}
         <div className="content-wrapper">
           {activeTab === "dashboard" && (
-            <DashboardOverview onNavigate={(tab) => setActiveTab(tab)} />
+            <DashboardOverview onNavigate={(tab) => handleNavigate(tab)} />
           )}
 
           {activeTab === "projects" && (

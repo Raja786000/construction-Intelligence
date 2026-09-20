@@ -12,6 +12,8 @@ Enterprise Construction Intelligence & Site Surveillance platform integrating YO
 
 👉 **For complete step-by-step instructions, troubleshooting, and manual terminal commands, read [HOW_TO_RUN.md](./HOW_TO_RUN.md).**
 
+👉 **For a summary of the latest UI/UX fixes and additions (theme toggle, mobile nav, toasts, and a fixed theme-loading bug), read [UI_UX_CHANGES.md](./UI_UX_CHANGES.md).**
+
 ---
 
 ## 🔑 Demo Logins

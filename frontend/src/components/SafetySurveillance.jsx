@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { API_BASE_URL } from "../api/client";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -56,8 +57,8 @@ export default function SafetySurveillance() {
     try {
       const isVideo = file.type.startsWith("video/");
       const endpoint = isVideo
-        ? "http://127.0.0.1:8000/safety/video-detect"
-        : "http://127.0.0.1:8000/safety/detect";
+        ? `${API_BASE_URL}/safety/video-detect`
+        : `${API_BASE_URL}/safety/detect`;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -139,7 +140,7 @@ export default function SafetySurveillance() {
     const base64Data = canvas.toDataURL("image/jpeg", 0.7);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/safety/detect-live", {
+      const res = await fetch(`${API_BASE_URL}/safety/detect-live`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: base64Data })
@@ -433,7 +434,7 @@ export default function SafetySurveillance() {
               <h3 className="ci-card-title">Processed AI Video</h3>
               <video
                 controls
-                src={`http://127.0.0.1:8000/results/${result.output_video.replace("runs/", "")}`}
+                src={`${API_BASE_URL}/results/${result.output_video.replace("runs/", "")}`}
                 style={{ width: "100%", maxWidth: "700px", borderRadius: "12px" }}
               />
             </div>
